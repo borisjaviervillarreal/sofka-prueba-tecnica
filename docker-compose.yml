@@ -1,0 +1,53 @@
+services:
+  api-gateway:
+    image: api-gateway-image
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - cliente-service
+      - cuenta-service
+      - rabbitmq
+    networks:
+      - prueba-network
+
+  cliente-service:
+    image: cliente-service-image
+    build:
+      context: ./ClienteService
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - prueba-network
+
+  cuenta-service:
+    image: cuenta-service-image
+    build:
+      context: ./CuentaService
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - prueba-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" 
+      - "15672:15672" 
+    networks:
+      - prueba-network
+
+networks:
+  prueba-network:
+    driver: bridge
