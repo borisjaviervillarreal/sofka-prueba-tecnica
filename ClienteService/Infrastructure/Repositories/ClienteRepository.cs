@@ -27,17 +27,18 @@ namespace ClienteService.Infrastructure.Repositories
             }
         }
 
-        public async Task<Cliente> GetClienteByIdAsync(int id)
+        public async Task<Cliente> GetClienteByIdAsync(string clienteId)
         {
             try
             {
-                return await _context.Clientes.FindAsync(id);
+                return await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
             }
             catch (Exception ex)
             {
                 throw new AppException("Error al obtener el cliente desde la base de datos.", 500);
             }
         }
+
 
         public async Task AddClienteAsync(Cliente cliente)
         {
@@ -66,22 +67,29 @@ namespace ClienteService.Infrastructure.Repositories
 
         }
 
-        public async Task DeleteClienteAsync(int id)
+        public async Task DeleteClienteAsync(string clienteId)
         {
             try
             {
-                var cliente = await _context.Clientes.FindAsync(id);
-                if (cliente != null)
+                var cliente = await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
+                if (cliente == null)
                 {
-                    cliente.Estado = "Inactivo";
-                    _context.Clientes.Update(cliente);
-                    await _context.SaveChangesAsync();
+                    throw new ClienteNotFoundException(clienteId);
                 }
+
+                cliente.Estado = "Inactivo"; // Eliminado lógico cambiando el estado
+                _context.Clientes.Update(cliente);
+                await _context.SaveChangesAsync();
+            }
+            catch (ClienteNotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 throw new AppException("Error al eliminar el cliente de la base de datos.", 500);
             }
         }
+
     }
 }

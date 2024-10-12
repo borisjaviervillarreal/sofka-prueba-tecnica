@@ -2,7 +2,7 @@
 {
     public class ClienteNotFoundException : AppException
     {
-        public ClienteNotFoundException(int clienteId)
+        public ClienteNotFoundException(string clienteId)
             : base($"El cliente con ID {clienteId} no fue encontrado.", 404) { }
     }
 }

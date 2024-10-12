@@ -59,12 +59,13 @@ namespace CuentaService.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> AddCuenta([FromBody] CuentaDto cuentaDto)
+        public async Task<ActionResult> AddCuenta([FromBody] CuentaCreateDto cuentaDto)
         {
             try
             {
-                await _cuentaService.AddCuentaAsync(cuentaDto);
-                return CreatedAtAction(nameof(GetCuentaById), new { id = cuentaDto.Id }, cuentaDto);
+                var cuentaCreada = await _cuentaService.AddCuentaAsync(cuentaDto);
+
+                return CreatedAtAction(nameof(GetCuentaById), new { id = cuentaCreada.Id }, cuentaCreada);
             }
             catch (AppException ex)
             {
@@ -76,17 +77,13 @@ namespace CuentaService.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateCuenta(int id, [FromBody] CuentaDto cuentaDto)
-        {
-            if (id != cuentaDto.Id)
-            {
-                return BadRequest(new { error = "El ID proporcionado no coincide con el ID de la cuenta." });
-            }
 
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateCuenta(int id, [FromBody] CuentaUpdateDto cuentaUpdateDto)
+        {
             try
             {
-                await _cuentaService.UpdateCuentaAsync(cuentaDto);
+                await _cuentaService.UpdateCuentaAsync(id, cuentaUpdateDto);
                 return NoContent();
             }
             catch (CuentaNotFoundException ex)
@@ -102,6 +99,7 @@ namespace CuentaService.Controllers
                 return StatusCode(500, new { error = "Ha ocurrido un error inesperado." });
             }
         }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteCuenta(int id)
@@ -148,20 +146,13 @@ namespace CuentaService.Controllers
         }
 
         [HttpPost("{cuentaId}/movimientos")]
-        public async Task<ActionResult> AddMovimiento(int cuentaId, [FromBody] MovimientoDto movimientoDto)
+        public async Task<ActionResult> AddMovimiento(int cuentaId, [FromBody] MovimientoCreateDto movimientoDto)
         {
-            // Asignar el cuentaId de la URL al DTO para asegurar que coincidan
-            movimientoDto.CuentaId = cuentaId;
-
-            if (cuentaId != movimientoDto.CuentaId)
-            {
-                return BadRequest(new { error = "El ID de la cuenta proporcionado no coincide con el ID en el movimiento." });
-            }
-
             try
             {
-                await _cuentaService.AddMovimientoAsync(movimientoDto);
-                return Ok(movimientoDto);
+                // Como el cuentaId viene por parámetro, no necesitamos asignarlo al DTO
+                await _cuentaService.AddMovimientoAsync(cuentaId, movimientoDto);
+                return Ok(new { message = "Movimiento agregado exitosamente" });
             }
             catch (SaldoInsuficienteException ex)
             {
@@ -181,8 +172,10 @@ namespace CuentaService.Controllers
             }
         }
 
+
+
         [HttpGet("reporte")]
-        public async Task<ActionResult<List<EstadoCuentaDto>>> GetEstadoCuenta([FromQuery] int clienteId, [FromQuery] DateTime fechaInicio, [FromQuery] DateTime fechaFin)
+        public async Task<ActionResult<List<EstadoCuentaDto>>> GetEstadoCuenta([FromQuery] string clienteId, [FromQuery] DateTime fechaInicio, [FromQuery] DateTime fechaFin)
         {
             try
             {

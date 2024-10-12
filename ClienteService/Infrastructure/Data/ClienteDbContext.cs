@@ -25,6 +25,16 @@ namespace ClienteService.Infrastructure.Data
             // Configuración de la clave primaria en Persona
             modelBuilder.Entity<Persona>()
                 .HasKey(p => p.Id);
+
+            // Configuración para que el campo Id sea Identity (autoincremental)
+            modelBuilder.Entity<Persona>()
+                .Property(p => p.Id)
+                .ValueGeneratedOnAdd();
+
+            // Configuración para que ClienteId sea único
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.ClienteId)
+                .IsUnique();
         }
     }
 }

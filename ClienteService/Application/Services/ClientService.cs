@@ -4,6 +4,7 @@ using ClienteService.Domain.Entities;
 using ClienteService.Domain.Interfaces;
 using ClienteService.DTOs;
 using ClienteService.Producers.RabbitMQ;
+using CuentaService.DTOs;
 
 namespace ClienteService.Application.Services
 {
@@ -11,11 +12,12 @@ namespace ClienteService.Application.Services
     {
         private readonly IClienteRepository _clienteRepository;
         private readonly IMapper _mapper;
-
-        public ClientService(IClienteRepository clienteRepository, IMapper mapper)
+        private readonly IClienteCreatedPublisher _clientePublisher;
+        public ClientService(IClienteRepository clienteRepository, IMapper mapper, IClienteCreatedPublisher clientePublisher)
         {
             _clienteRepository = clienteRepository ?? throw new ArgumentNullException(nameof(clienteRepository));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _clientePublisher = clientePublisher;
         }
 
         public async Task<IEnumerable<ClienteDto>> GetAllClientesAsync()
@@ -31,37 +33,49 @@ namespace ClienteService.Application.Services
             }
         }
 
-        public async Task<ClienteDto> GetClienteByIdAsync(int id)
+        public async Task<ClienteDto> GetClienteByIdAsync(string clienteId)
         {
             try
             {
-                var cliente = await _clienteRepository.GetClienteByIdAsync(id);
+                var cliente = await _clienteRepository.GetClienteByIdAsync(clienteId);
                 if (cliente == null)
                 {
-                    throw new ClienteNotFoundException(id);
+                    throw new ClienteNotFoundException(clienteId);
                 }
 
                 return _mapper.Map<ClienteDto>(cliente);
             }
-            catch (ClienteNotFoundException) 
+            catch (ClienteNotFoundException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new AppException($"Error al obtener el cliente con ID {id}: {ex.Message}", 500);
+                throw new AppException($"Error al obtener el cliente con ClienteId {clienteId}: {ex.Message}", 500);
             }
         }
 
 
-        public async Task AddClienteAsync(ClienteDto clienteDto)
+
+        public async Task<Cliente> AddClienteAsync(ClienteCreateDto clienteDto)
         {
             if (clienteDto == null) throw new ArgumentNullException(nameof(clienteDto));
 
             try
             {
                 var cliente = _mapper.Map<Cliente>(clienteDto);
+                // Generar ClienteId automáticamente
+                if (string.IsNullOrEmpty(cliente.ClienteId))
+                {
+                    cliente.ClienteId = Guid.NewGuid().ToString();
+                }
                 await _clienteRepository.AddClienteAsync(cliente);
+
+                // Publicar cliente creado en RabbitMQ
+                var clienteInfo = _mapper.Map<ClienteInfoDto>(cliente);
+                _clientePublisher.PublishCliente(clienteInfo);
+
+                return cliente;
             }
             catch (Exception ex)
             {
@@ -69,32 +83,46 @@ namespace ClienteService.Application.Services
             }
         }
 
-        public async Task UpdateClienteAsync(ClienteDto clienteDto)
+        public async Task UpdateClienteAsync(string clienteId, ClienteUpdateDto clienteDto)
         {
             if (clienteDto == null) throw new ArgumentNullException(nameof(clienteDto));
 
             try
             {
-                var cliente = _mapper.Map<Cliente>(clienteDto);
+                var cliente = await _clienteRepository.GetClienteByIdAsync(clienteId);
+                if (cliente == null)
+                {
+                    throw new ClienteNotFoundException($"El cliente con ID {clienteId} no fue encontrado.");
+                }
+
+                _mapper.Map(clienteDto, cliente);
+
                 await _clienteRepository.UpdateClienteAsync(cliente);
+
+                // Publicar cliente actualizado en RabbitMQ
+                var clienteInfo = _mapper.Map<ClienteInfoDto>(cliente);
+                _clientePublisher.PublishCliente(clienteInfo);
             }
             catch (Exception ex)
             {
-                throw new AppException($"Error al actualizar el cliente con ID {clienteDto.Id}: {ex.Message}", 500);
+                throw new AppException($"Error al actualizar el cliente con ClienteId {clienteId}: {ex.Message}", 500);
             }
         }
 
-        public async Task DeleteClienteAsync(int id)
+
+
+        public async Task DeleteClienteAsync(string clienteId)
         {
             try
             {
-                await _clienteRepository.DeleteClienteAsync(id);
+                await _clienteRepository.DeleteClienteAsync(clienteId);
             }
             catch (Exception ex)
             {
-                throw new AppException($"Error al eliminar el cliente con ID {id}: {ex.Message}", 500);
+                throw new AppException($"Error al eliminar el cliente con ClienteId {clienteId}: {ex.Message}", 500);
             }
         }
+
     }
 
 }

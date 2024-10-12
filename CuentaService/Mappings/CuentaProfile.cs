@@ -9,10 +9,13 @@ namespace CuentaService.Mappings
         public CuentaProfile()
         {
             CreateMap<Cuenta, CuentaDto>().ReverseMap();
-            CreateMap<Movimiento, MovimientoDto>().ReverseMap();
-            CreateMap<MovimientoDto, Movimiento>()
-                .ForMember(dest => dest.Fecha, opt => opt.Ignore());
+            CreateMap<Cuenta, CuentaCreateDto>().ReverseMap();
+            CreateMap<Cuenta, CuentaUpdateDto>().ReverseMap();
 
+            CreateMap<Movimiento, MovimientoDto>().ReverseMap();
+            CreateMap<MovimientoCreateDto, Movimiento>()
+                .ForMember(dest => dest.Fecha, opt => opt.Ignore());
         }
     }
+
 }

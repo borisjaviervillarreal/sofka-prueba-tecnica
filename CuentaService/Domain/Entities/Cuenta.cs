@@ -8,6 +8,6 @@
         public decimal SaldoInicial { get; set; }
         public string Estado { get; set; }
         // Relación con el cliente
-        public int ClienteId { get; set; }
+        public string ClienteId { get; set; }
     }
 }

@@ -27,28 +27,34 @@ public class CuentaServiceTests
     public async Task AgregarCuentaAsync_DeberiaAgregarCuenta_CuandoCuentaEsValida()
     {
         // Arrange
-        var cuentaDto = new CuentaDto { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa" };
-        var cuenta = new Cuenta { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa" };
+        var cuentaCreateDto = new CuentaCreateDto { NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa", ClienteId = "1" };
+        var cuenta = new Cuenta { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa", ClienteId = "1" };
+        var cuentaDto = new CuentaDto { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa", ClienteId = "1" };
 
-        _mapperMock.Setup(m => m.Map<Cuenta>(cuentaDto)).Returns(cuenta);
+        _mapperMock.Setup(m => m.Map<Cuenta>(cuentaCreateDto)).Returns(cuenta);
         _cuentaRepositoryMock.Setup(r => r.AddCuentaAsync(cuenta)).Returns(Task.CompletedTask);
+        _mapperMock.Setup(m => m.Map<CuentaDto>(cuenta)).Returns(cuentaDto);
 
         // Act
-        await _cuentaService.AddCuentaAsync(cuentaDto);
+        var result = await _cuentaService.AddCuentaAsync(cuentaCreateDto);
 
         // Assert
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Id);
         _cuentaRepositoryMock.Verify(r => r.AddCuentaAsync(It.IsAny<Cuenta>()), Times.Once);
     }
+
 
     [Fact]
     public async Task AgregarCuentaAsync_DeberiaLanzarExcepcion_CuandoCuentaEsInvalida()
     {
         // Arrange
-        CuentaDto cuentaDto = null;
+        CuentaCreateDto cuentaCreateDto = null;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _cuentaService.AddCuentaAsync(cuentaDto));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _cuentaService.AddCuentaAsync(cuentaCreateDto));
     }
+
 
     [Fact]
     public async Task ObtenerCuentaPorIdAsync_DeberiaRetornarCuenta_CuandoCuentaExiste()
@@ -80,18 +86,20 @@ public class CuentaServiceTests
     public async Task ActualizarCuentaAsync_DeberiaActualizarCuenta_CuandoCuentaEsValida()
     {
         // Arrange
-        var cuentaDto = new CuentaDto { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa" };
-        var cuenta = new Cuenta { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa" };
+        var cuentaUpdateDto = new CuentaUpdateDto { NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa", ClienteId = "1" };
+        var cuenta = new Cuenta { Id = 1, NumeroCuenta = "123456", TipoCuenta = "Ahorro", SaldoInicial = 1000, Estado = "Activa", ClienteId = "1" };
 
-        _mapperMock.Setup(m => m.Map<Cuenta>(cuentaDto)).Returns(cuenta);
+        _cuentaRepositoryMock.Setup(r => r.GetCuentaByIdAsync(1)).ReturnsAsync(cuenta);
+        _mapperMock.Setup(m => m.Map(cuentaUpdateDto, cuenta)).Returns(cuenta);
         _cuentaRepositoryMock.Setup(r => r.UpdateCuentaAsync(cuenta)).Returns(Task.CompletedTask);
 
         // Act
-        await _cuentaService.UpdateCuentaAsync(cuentaDto);
+        await _cuentaService.UpdateCuentaAsync(1, cuentaUpdateDto);
 
         // Assert
         _cuentaRepositoryMock.Verify(r => r.UpdateCuentaAsync(It.IsAny<Cuenta>()), Times.Once);
     }
+
 
     [Fact]
     public async Task EliminarCuentaAsync_DeberiaEliminarCuenta_CuandoCuentaExiste()

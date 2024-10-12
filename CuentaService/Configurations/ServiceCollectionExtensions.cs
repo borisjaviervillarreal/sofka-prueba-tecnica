@@ -2,6 +2,7 @@
 using CuentaService.Domain.Interfaces;
 using CuentaService.Infrastructure.Data;
 using CuentaService.Infrastructure.Repositories;
+using CuentaService.Producers.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
 
 namespace CuentaService.Configurations
@@ -13,6 +14,10 @@ namespace CuentaService.Configurations
             // Configuración del DbContext usando la cadena de conexión proporcionada en la configuración
             services.AddDbContext<CuentaDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("CuentaDatabase")));
+
+            // Registrar ClienteCreatedConsumer
+            services.AddSingleton<ClienteCreatedConsumer>();
+
 
             // Inyectar Servicios y Repositorios
             services.AddScoped<ICuentaService, CuentService>();

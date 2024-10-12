@@ -1,6 +1,8 @@
 ﻿using ClienteService.Application.Exceptions;
 using ClienteService.Application.Services;
+using ClienteService.Domain.Entities;
 using ClienteService.DTOs;
+using CuentaService.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,12 +37,12 @@ namespace ClienteService.Controllers
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ClienteDto>> GetClienteById(int id)
+        [HttpGet("{clienteId}")]
+        public async Task<ActionResult<ClienteDto>> GetClienteById(string clienteId)
         {
             try
             {
-                var cliente = await _clienteService.GetClienteByIdAsync(id);
+                var cliente = await _clienteService.GetClienteByIdAsync(clienteId);
                 return Ok(cliente);
             }
             catch (ClienteNotFoundException ex)
@@ -57,13 +59,14 @@ namespace ClienteService.Controllers
             }
         }
 
+
         [HttpPost]
-        public async Task<ActionResult> AddCliente([FromBody] ClienteDto clienteDto)
+        public async Task<ActionResult> AddCliente([FromBody] ClienteCreateDto clienteDto)
         {
             try
             {
-                await _clienteService.AddClienteAsync(clienteDto);
-                return CreatedAtAction(nameof(GetClienteById), new { id = clienteDto.Id }, clienteDto);
+                var cliente = await _clienteService.AddClienteAsync(clienteDto);
+                return CreatedAtAction(nameof(GetClienteById), new { clienteId = cliente.ClienteId }, cliente);
             }
             catch (AppException ex)
             {
@@ -75,17 +78,12 @@ namespace ClienteService.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateCliente(int id, [FromBody] ClienteDto clienteDto)
+        [HttpPut("{clienteId}")]
+        public async Task<ActionResult> UpdateCliente(string clienteId, [FromBody] ClienteUpdateDto clienteDto)
         {
-            if (id != clienteDto.Id)
-            {
-                return BadRequest(new { error = "El ID proporcionado no coincide con el ID del cliente." });
-            }
-
             try
             {
-                await _clienteService.UpdateClienteAsync(clienteDto);
+                await _clienteService.UpdateClienteAsync(clienteId, clienteDto);
                 return NoContent();
             }
             catch (ClienteNotFoundException ex)
@@ -102,12 +100,13 @@ namespace ClienteService.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteCliente(int id)
+
+        [HttpDelete("{clienteId}")]
+        public async Task<ActionResult> DeleteCliente(string clienteId)
         {
             try
             {
-                await _clienteService.DeleteClienteAsync(id);
+                await _clienteService.DeleteClienteAsync(clienteId);
                 return NoContent();
             }
             catch (ClienteNotFoundException ex)
@@ -123,5 +122,6 @@ namespace ClienteService.Controllers
                 return StatusCode(500, new { error = "Ha ocurrido un error inesperado." });
             }
         }
+
     }
 }

@@ -57,7 +57,7 @@ namespace CuentaService.Application.Services
         }
 
 
-        public async Task AddCuentaAsync(CuentaDto cuentaDto)
+        public async Task<CuentaDto> AddCuentaAsync(CuentaCreateDto cuentaDto)
         {
             if (cuentaDto == null)
             {
@@ -67,8 +67,12 @@ namespace CuentaService.Application.Services
             try
             {
                 var cuenta = _mapper.Map<Cuenta>(cuentaDto);
-                Console.WriteLine($"ClienteId antes de guardar la cuenta: {cuenta.ClienteId}");
+
+                //Console.WriteLine($"ClienteId antes de guardar la cuenta: {cuenta.ClienteId}");
+
                 await _cuentaRepository.AddCuentaAsync(cuenta);
+
+                return _mapper.Map<CuentaDto>(cuenta);
             }
             catch (Exception ex)
             {
@@ -76,24 +80,35 @@ namespace CuentaService.Application.Services
             }
         }
 
-
-        public async Task UpdateCuentaAsync(CuentaDto cuentaDto)
+        public async Task UpdateCuentaAsync(int id, CuentaUpdateDto cuentaUpdateDto)
         {
             try
             {
-                if (cuentaDto == null)
+                if (cuentaUpdateDto == null)
                 {
-                    throw new ArgumentNullException(nameof(cuentaDto), "El objeto cuenta no puede ser nulo.");
+                    throw new ArgumentNullException(nameof(cuentaUpdateDto), "El objeto cuenta no puede ser nulo.");
                 }
 
-                var cuenta = _mapper.Map<Cuenta>(cuentaDto);
-                await _cuentaRepository.UpdateCuentaAsync(cuenta);
+                var cuentaExistente = await _cuentaRepository.GetCuentaByIdAsync(id);
+                if (cuentaExistente == null)
+                {
+                    throw new CuentaNotFoundException(id);
+                }
+
+                _mapper.Map(cuentaUpdateDto, cuentaExistente);
+
+                await _cuentaRepository.UpdateCuentaAsync(cuentaExistente);
+            }
+            catch (CuentaNotFoundException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 throw new AppException("Error al actualizar la cuenta.", 500);
             }
         }
+
 
         public async Task DeleteCuentaAsync(int id)
         {
@@ -122,15 +137,15 @@ namespace CuentaService.Application.Services
             return _mapper.Map<IEnumerable<MovimientoDto>>(movimientos);
         }
 
-        public async Task AddMovimientoAsync(MovimientoDto movimientoDto)
+        public async Task AddMovimientoAsync(int cuentaId, MovimientoCreateDto movimientoDto)
         {
             try
             {
                 // Validar si la cuenta existe
-                var cuenta = await _cuentaRepository.GetCuentaByIdAsync(movimientoDto.CuentaId);
+                var cuenta = await _cuentaRepository.GetCuentaByIdAsync(cuentaId);
                 if (cuenta == null)
                 {
-                    throw new CuentaNotFoundException(movimientoDto.CuentaId);
+                    throw new CuentaNotFoundException(cuentaId);
                 }
 
                 // Validar el saldo disponible
@@ -139,16 +154,20 @@ namespace CuentaService.Application.Services
                     throw new SaldoInsuficienteException(cuenta.SaldoInicial, movimientoDto.Valor);
                 }
 
-                // Actualizar el saldo
+                // Actualizar el saldo de la cuenta
                 cuenta.SaldoInicial += movimientoDto.TipoMovimiento == "Retiro" ? -movimientoDto.Valor : movimientoDto.Valor;
                 await _cuentaRepository.UpdateCuentaAsync(cuenta);
 
                 // Agregar el movimiento
-                var movimiento = _mapper.Map<Movimiento>(movimientoDto);
-                movimiento.Saldo = cuenta.SaldoInicial;
-                movimiento.Fecha = DateTime.UtcNow;
+                var movimiento = new Movimiento
+                {
+                    TipoMovimiento = movimientoDto.TipoMovimiento,
+                    Valor = movimientoDto.Valor,
+                    Saldo = cuenta.SaldoInicial,
+                    Fecha = DateTime.UtcNow,
+                    CuentaId = cuenta.Id  // Relacionar movimiento con la cuenta
+                };
 
-                Console.WriteLine($"Fecha del movimiento antes de insertar: {movimiento.Fecha}");
                 await _movimientoRepository.AddMovimientoAsync(movimiento);
             }
             catch (Exception ex)
@@ -157,7 +176,9 @@ namespace CuentaService.Application.Services
             }
         }
 
-        public async Task<List<EstadoCuentaDto>> GetEstadoCuentaAsync(int clienteId, DateTime fechaInicio, DateTime fechaFin)
+
+
+        public async Task<List<EstadoCuentaDto>> GetEstadoCuentaAsync(string clienteId, DateTime fechaInicio, DateTime fechaFin)
         {
             try
             {

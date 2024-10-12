@@ -19,6 +19,14 @@ namespace CuentaService.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Cuenta>()
+                .Property(c => c.Id)
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<Movimiento>()
+                .Property(m => m.Id)
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<Cuenta>()
                 .Property(c => c.SaldoInicial)
                 .HasPrecision(18, 2);
 
@@ -30,12 +38,17 @@ namespace CuentaService.Infrastructure.Data
                 .Property(m => m.Valor)
                 .HasPrecision(18, 2);
 
-            // Configurar la relación entre Cuenta y Movimiento
             modelBuilder.Entity<Movimiento>()
                 .HasOne<Cuenta>()
                 .WithMany()
                 .HasForeignKey(m => m.CuentaId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Cuenta>()
+                .Property(c => c.ClienteId)
+                .IsRequired();
         }
     }
+
+
 }

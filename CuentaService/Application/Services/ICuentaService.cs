@@ -7,12 +7,12 @@ namespace CuentaService.Application.Services
     {
         Task<IEnumerable<CuentaDto>> GetAllCuentasAsync();
         Task<CuentaDto> GetCuentaByIdAsync(int id);
-        Task AddCuentaAsync(CuentaDto cuentaDto);
-        Task UpdateCuentaAsync(CuentaDto cuentaDto);
+        Task<CuentaDto> AddCuentaAsync(CuentaCreateDto cuentaDto);
+        Task UpdateCuentaAsync(int id, CuentaUpdateDto cuentaUpdateDto);
         Task DeleteCuentaAsync(int id);
 
         Task<IEnumerable<MovimientoDto>> GetMovimientosByCuentaIdAsync(int cuentaId);
-        Task AddMovimientoAsync(MovimientoDto movimientoDto);
-        Task<List<EstadoCuentaDto>> GetEstadoCuentaAsync(int clienteId, DateTime fechaInicio, DateTime fechaFin);
+        Task AddMovimientoAsync(int cuentaId, MovimientoCreateDto movimientoDto);
+        Task<List<EstadoCuentaDto>> GetEstadoCuentaAsync(string clienteId, DateTime fechaInicio, DateTime fechaFin);
     }
 }

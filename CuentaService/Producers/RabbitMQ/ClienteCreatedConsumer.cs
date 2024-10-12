@@ -14,32 +14,53 @@ namespace CuentaService.Producers.RabbitMQ
         private readonly IModel _channel;
 
         // Almacenamiento en memoria para los datos del cliente
-        public static ConcurrentDictionary<int, ClienteInfoDto> ClientesInfo = new ConcurrentDictionary<int, ClienteInfoDto>();
+        public static ConcurrentDictionary<string, ClienteInfoDto> ClientesInfo = new ConcurrentDictionary<string, ClienteInfoDto>();
 
-        public ClienteCreatedConsumer()
+        public ClienteCreatedConsumer(IConfiguration configuration)
         {
-            var factory = new ConnectionFactory() { HostName = "rabbitmq" };
+            var factory = new ConnectionFactory()
+            {
+                HostName = configuration["RabbitMQ:Host"],
+                Port = int.Parse(configuration["RabbitMQ:Port"]),
+                UserName = configuration["RabbitMQ:UserName"],
+                Password = configuration["RabbitMQ:Password"]
+            };
 
             int retryCount = 0;
             bool connected = false;
-            while (!connected && retryCount < 10) 
+            while (!connected && retryCount < 10)
             {
                 try
                 {
                     _connection = factory.CreateConnection();
                     _channel = _connection.CreateModel();
+
+                    // Declarar el exchange
+                    _channel.ExchangeDeclare(exchange: "cliente_exchange",
+                                             type: "direct",
+                                             durable: true,
+                                             autoDelete: false,
+                                             arguments: null);
+
+                    // Declarar la cola
                     _channel.QueueDeclare(queue: "cliente_queue",
-                                         durable: false,
+                                         durable: true,
                                          exclusive: false,
                                          autoDelete: false,
                                          arguments: null);
+
+                    // Vincular la cola al exchange
+                    _channel.QueueBind(queue: "cliente_queue",
+                                       exchange: "cliente_exchange",
+                                       routingKey: "cliente_routing_key");
+
                     connected = true; // Conexión exitosa
                 }
                 catch (Exception ex)
                 {
                     retryCount++;
                     Console.WriteLine($"Intentando reconectar a RabbitMQ... ({retryCount})");
-                    Thread.Sleep(5000); 
+                    Thread.Sleep(5000);
                 }
             }
 
@@ -61,8 +82,11 @@ namespace CuentaService.Producers.RabbitMQ
                 // Almacenar la información del cliente en el diccionario
                 if (clienteInfo != null)
                 {
-                    ClientesInfo[clienteInfo.Id] = clienteInfo;
-                    Console.WriteLine($"Cliente recibido: {clienteInfo.Nombre} ({clienteInfo.Identificacion})");
+                    ClientesInfo[clienteInfo.ClienteId] = clienteInfo;
+                    Console.WriteLine($"Cliente recibido: {clienteInfo.Nombre} ({clienteInfo.ClienteId})");
+
+                    // Confirmar la recepción del mensaje
+                    _channel.BasicAck(ea.DeliveryTag, multiple: false);
                 }
                 else
                 {
@@ -71,7 +95,7 @@ namespace CuentaService.Producers.RabbitMQ
             };
 
             _channel.BasicConsume(queue: "cliente_queue",
-                                 autoAck: true,
+                                 autoAck: false,
                                  consumer: consumer);
         }
     }
