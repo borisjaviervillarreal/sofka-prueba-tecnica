@@ -1,0 +1,348 @@
+{
+    "info": {
+        "name": "Cliente y Cuenta API Collection",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "ClienteService - Obtener Todos los Clientes",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cliente",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cliente"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "ClienteService - Obtener Cliente por ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cliente/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cliente",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "ClienteService - Agregar Cliente",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"nombre\": \"Javier Villarreal\",\n    \"genero\": \"Masculino\",\n    \"identificacion\": \"12345\",\n    \"direccion\": \"Calle Falsa 123\",\n    \"telefono\": \"555-1234\",\n    \"clienteId\": \"1\",\n    \"estado\": \"Activo\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/cliente",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cliente"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "ClienteService - Actualizar Cliente",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"id\": 1,\n    \"nombre\": \"Javier Villarreal\",\n    \"genero\": \"Masculino\",\n    \"identificacion\": \"12345\",\n    \"direccion\": \"Calle Falsa 123\",\n    \"telefono\": \"555-1234\",\n    \"clienteId\": \"1\",\n    \"estado\": \"Activo\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/cliente/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cliente",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "ClienteService - Eliminar Cliente",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cliente/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cliente",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Obtener Todas las Cuentas",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Obtener Cuenta por ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+{
+    "name": "CuentaService - Agregar Cuenta",
+    "request": {
+        "method": "POST",
+        "header": [
+            {
+                "key": "Content-Type",
+                "value": "application/json"
+            }
+        ],
+        "body": {
+            "mode": "raw",
+            "raw": "{\n    \"numeroCuenta\": \"123456\",\n    \"tipoCuenta\": \"Ahorro\",\n    \"saldoInicial\": 1000,\n    \"estado\": \"Activa\",\n    \"clienteId\": 1\n}"
+        },
+        "url": {
+            "raw": "{{baseUrl}}/api/cuenta",
+            "host": [
+                "{{baseUrl}}"
+            ],
+            "path": [
+                "api",
+                "cuenta"
+            ]
+        }
+    }
+}
+,
+        {
+            "name": "CuentaService - Actualizar Cuenta",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"id\": 1,\n    \"numeroCuenta\": \"123456\",\n    \"tipoCuenta\": \"Ahorro\",\n    \"saldoInicial\": 2000,\n    \"estado\": \"Activa\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Eliminar Cuenta",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/:id",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        ":id"
+                    ],
+                    "variable": [
+                        {
+                            "key": "id",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Obtener Movimientos de una Cuenta",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/:cuentaId/movimientos",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        ":cuentaId",
+                        "movimientos"
+                    ],
+                    "variable": [
+                        {
+                            "key": "cuentaId",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Agregar Movimiento a una Cuenta",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"tipoMovimiento\": \"Deposito\",\n    \"valor\": 1000\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/:cuentaId/movimientos",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        ":cuentaId",
+                        "movimientos"
+                    ],
+                    "variable": [
+                        {
+                            "key": "cuentaId",
+                            "value": "1"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "CuentaService - Obtener Reporte de Estado de Cuenta",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/cuenta/reporte?clienteId={{clienteId}}&fechaInicio={{fechaInicio}}&fechaFin={{fechaFin}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "cuenta",
+                        "reporte"
+                    ],
+                    "query": [
+                        {
+                            "key": "clienteId",
+                            "value": "1"
+                        },
+                        {
+                            "key": "fechaInicio",
+                            "value": "2023-01-01"
+                        },
+                        {
+                            "key": "fechaFin",
+                            "value": "2023-12-31"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
