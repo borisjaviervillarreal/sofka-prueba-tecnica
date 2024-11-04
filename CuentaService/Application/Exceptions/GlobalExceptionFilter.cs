@@ -14,8 +14,7 @@ namespace CuentaService.Application.Exceptions
 
         public void OnException(ExceptionContext context)
         {
-            _logger.LogError(context.Exception, "A ocurrido un error");
-
+            // Determinamos el código de estado basado en la excepción
             var statusCode = context.Exception switch
             {
                 CuentaNotFoundException => StatusCodes.Status404NotFound,
@@ -23,13 +22,19 @@ namespace CuentaService.Application.Exceptions
                 _ => StatusCodes.Status500InternalServerError
             };
 
+            // Creamos el objeto ProblemDetails para estructurar la respuesta
             var problemDetails = new ProblemDetails
             {
                 Status = statusCode,
-                Title = "Un error ha ocurrido durante el procesamiento de su petición.",
-                Detail = context.Exception.Message
+                Title = "An error occurred while processing your request.",
+                Detail = context.Exception.Message,
+                Instance = context.HttpContext.Request.Path // Información opcional sobre la solicitud
             };
 
+            // Registrar el error
+            _logger.LogError(context.Exception, "Error captured by GlobalExceptionFilter");
+
+            // Configuramos el resultado
             context.Result = new ObjectResult(problemDetails)
             {
                 StatusCode = statusCode
