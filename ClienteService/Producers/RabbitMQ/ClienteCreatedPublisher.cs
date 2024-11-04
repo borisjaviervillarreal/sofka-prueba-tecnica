@@ -3,13 +3,14 @@ using System.Text.Json;
 using System.Text;
 using ClienteService.DTOs;
 using RabbitMQ.Client.Exceptions;
+using Polly;
 
 namespace ClienteService.Producers.RabbitMQ
 {
     public class ClienteCreatedPublisher : IClienteCreatedPublisher
     {
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private IConnection _connection;
+        private IModel _channel;
 
         public ClienteCreatedPublisher(IConfiguration configuration)
         {
@@ -20,57 +21,52 @@ namespace ClienteService.Producers.RabbitMQ
                 UserName = configuration["RabbitMQ:UserName"],
                 Password = configuration["RabbitMQ:Password"]
             };
-            try
+
+            // Definir la política de reintento para la conexión
+            var retryPolicy = Policy
+                .Handle<BrokerUnreachableException>()
+                .WaitAndRetry(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        Console.WriteLine($"Intento {retryCount} fallido de conexión. Reintentando en {timeSpan.Seconds} segundos.");
+                    });
+
+            // Ejecutar la conexión con la política de reintento
+            retryPolicy.Execute(() =>
             {
                 _connection = factory.CreateConnection();
                 _channel = _connection.CreateModel();
 
-                // Declarar el exchange
-                _channel.ExchangeDeclare(exchange: "cliente_exchange",
-                                         type: "direct",
-                                         durable: true,
-                                         autoDelete: false,
-                                         arguments: null);
-
-                // Declarar la cola
-                _channel.QueueDeclare(queue: "cliente_queue",
-                                     durable: true,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
-
-                // Vincular la cola al exchange
-                _channel.QueueBind(queue: "cliente_queue",
-                                   exchange: "cliente_exchange",
-                                   routingKey: "cliente_routing_key");
-            }
-            catch (BrokerUnreachableException ex)
-            {
-                Console.WriteLine("No se pudo conectar a RabbitMQ. Verificar que el contenedor esté levantado: " + ex.Message);
-                throw;
-            }
+                _channel.ExchangeDeclare(exchange: "cliente_exchange", type: "direct", durable: true, autoDelete: false, arguments: null);
+                _channel.QueueDeclare(queue: "cliente_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+                _channel.QueueBind(queue: "cliente_queue", exchange: "cliente_exchange", routingKey: "cliente_routing_key");
+            });
         }
-
 
         public void PublishCliente(ClienteInfoDto clienteInfo)
         {
-            try
-            {
-                var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(clienteInfo));
-                var properties = _channel.CreateBasicProperties();
-                properties.Persistent = true;
+            var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(clienteInfo));
+            var properties = _channel.CreateBasicProperties();
+            properties.Persistent = true;
 
+            // Política de reintento para la publicación de mensajes
+            var publishRetryPolicy = Policy
+                .Handle<Exception>()
+                .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(200 * retryAttempt),
+                    (exception, timeSpan, retryCount, context) =>
+                    {
+                        Console.WriteLine($"Fallo al publicar mensaje. Intento {retryCount} en {timeSpan.TotalMilliseconds} ms.");
+                    });
+
+            publishRetryPolicy.Execute(() =>
+            {
                 _channel.BasicPublish(exchange: "cliente_exchange",
                                       routingKey: "cliente_routing_key",
                                       basicProperties: properties,
                                       body: body);
 
                 Console.WriteLine($"Mensaje publicado: Cliente {clienteInfo.Nombre} con ID {clienteInfo.ClienteId}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error al publicar el mensaje a RabbitMQ: {ex.Message}");
-            }
+            });
         }
 
     }
