@@ -2,8 +2,9 @@
 {
     public class ClienteInfoDto
     {
-        public string ClienteId { get; set; }
-        public string Nombre { get; set; }
-        public string Identificacion { get; set; }
+        public string ClienteId { get; init; }
+        public string Nombre { get; init; }
+        public string Identificacion { get; init; }
     }
+
 }

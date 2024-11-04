@@ -3,7 +3,6 @@ using CuentaService.Application.Exceptions;
 using CuentaService.Domain.Entities;
 using CuentaService.Domain.Interfaces;
 using CuentaService.DTOs;
-using CuentaService.DTOs.CuentaService.DTOs;
 using CuentaService.Producers.RabbitMQ;
 
 namespace CuentaService.Application.Services

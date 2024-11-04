@@ -1,5 +1,4 @@
 ﻿using CuentaService.DTOs;
-using CuentaService.DTOs.CuentaService.DTOs;
 
 namespace CuentaService.Application.Services
 {

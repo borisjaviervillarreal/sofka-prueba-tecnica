@@ -1,7 +1,6 @@
 ﻿using CuentaService.Application.Exceptions;
 using CuentaService.Application.Services;
 using CuentaService.DTOs;
-using CuentaService.DTOs.CuentaService.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

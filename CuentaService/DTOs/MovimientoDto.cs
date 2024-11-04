@@ -2,11 +2,12 @@
 {
     public class MovimientoDto
     {
-        public int Id { get; set; }
-        public DateTime Fecha { get; set; }
-        public string TipoMovimiento { get; set; }  
-        public decimal Valor { get; set; }  
-        public decimal Saldo { get; set; } 
-        public int CuentaId { get; set; }  
+        public int Id { get; init; }
+        public DateTime Fecha { get; init; }
+        public string TipoMovimiento { get; init; }
+        public decimal Valor { get; init; }
+        public decimal Saldo { get; init; }
+        public int CuentaId { get; init; }
     }
+
 }
