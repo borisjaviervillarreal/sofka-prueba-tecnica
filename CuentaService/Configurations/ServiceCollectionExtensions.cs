@@ -19,6 +19,7 @@ namespace CuentaService.Configurations
             // Configuración de filtro de Excepciones a Controladores Globales Centralizado
             services.AddControllers(options =>
             {
+                options.Filters.Add<ValidationFilter>();
                 options.Filters.Add<GlobalExceptionFilter>();
             });
 
