@@ -28,7 +28,7 @@ namespace CuentaService.Application.Exceptions
                 Status = statusCode,
                 Title = "An error occurred while processing your request.",
                 Detail = context.Exception.Message,
-                Instance = context.HttpContext.Request.Path // Información opcional sobre la solicitud
+                Instance = context.HttpContext.Request.Path
             };
 
             // Registrar el error
