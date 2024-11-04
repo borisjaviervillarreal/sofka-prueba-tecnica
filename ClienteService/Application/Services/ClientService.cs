@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ClienteService.Application.Exceptions;
 using ClienteService.Domain.Entities;
+using ClienteService.Domain.Events;
 using ClienteService.Domain.Interfaces;
 using ClienteService.DTOs;
 using ClienteService.Producers.RabbitMQ;
@@ -13,6 +14,7 @@ namespace ClienteService.Application.Services
         private readonly IClienteRepository _clienteRepository;
         private readonly IMapper _mapper;
         private readonly IClienteCreatedPublisher _clientePublisher;
+
         public ClientService(IClienteRepository clienteRepository, IMapper mapper, IClienteCreatedPublisher clientePublisher)
         {
             _clienteRepository = clienteRepository ?? throw new ArgumentNullException(nameof(clienteRepository));
@@ -31,13 +33,13 @@ namespace ClienteService.Application.Services
             var cliente = await _clienteRepository.GetClienteByIdAsync(clienteId);
             if (cliente == null)
             {
-                throw new ClienteNotFoundException(clienteId); // Excepción personalizada para cliente no encontrado
+                throw new ClienteNotFoundException(clienteId);
             }
 
             return _mapper.Map<ClienteDto>(cliente);
         }
 
-        public async Task<Cliente> AddClienteAsync(ClienteCreateDto clienteDto)
+        public async Task<ClienteCreatedDto> AddClienteAsync(ClienteCreateDto clienteDto)
         {
             if (clienteDto == null) throw new ArgumentNullException(nameof(clienteDto));
 
@@ -49,11 +51,19 @@ namespace ClienteService.Application.Services
 
             await _clienteRepository.AddClienteAsync(cliente);
 
-            var clienteInfo = _mapper.Map<ClienteInfoDto>(cliente);
-            _clientePublisher.PublishCliente(clienteInfo);
+            // Crear el evento de cliente creado y publicarlo
+            var clienteEvent = new ClienteCreatedEvent
+            {
+                ClienteId = cliente.ClienteId,
+                Nombre = cliente.Nombre,
+                Identificacion = cliente.Identificacion
+            };
+            _clientePublisher.PublishClienteCreated(clienteEvent);
 
-            return cliente;
+
+            return _mapper.Map<ClienteCreatedDto>(cliente);
         }
+
 
         public async Task UpdateClienteAsync(string clienteId, ClienteUpdateDto clienteDto)
         {
@@ -65,19 +75,25 @@ namespace ClienteService.Application.Services
                 throw new ClienteNotFoundException($"El cliente con ID {clienteId} no fue encontrado.");
             }
 
+            // Mapear los datos actualizados al cliente existente
             _mapper.Map(clienteDto, cliente);
             await _clienteRepository.UpdateClienteAsync(cliente);
 
-            var clienteInfo = _mapper.Map<ClienteInfoDto>(cliente);
-            _clientePublisher.PublishCliente(clienteInfo);
+            // Publicar un evento de actualización de cliente
+            var clienteEvent = new ClienteUpdatedEvent  
+            {
+                ClienteId = cliente.ClienteId,
+                Nombre = cliente.Nombre,
+                Identificacion = cliente.Identificacion
+            };
+
+            _clientePublisher.PublishClienteUpdated(clienteEvent);
         }
+
 
         public async Task DeleteClienteAsync(string clienteId)
         {
             await _clienteRepository.DeleteClienteAsync(clienteId);
         }
-
     }
-
 }
-

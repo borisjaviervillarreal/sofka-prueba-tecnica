@@ -5,6 +5,7 @@ using CuentaService.Infrastructure.Data;
 using CuentaService.Infrastructure.Repositories;
 using CuentaService.Producers.RabbitMQ;
 using Microsoft.EntityFrameworkCore;
+using RabbitMQ.Client;
 
 namespace CuentaService.Configurations
 {
@@ -12,20 +13,32 @@ namespace CuentaService.Configurations
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // Configuración del DbContext usando la cadena de conexión proporcionada en la configuración
+            // Configuración del DbContext
             services.AddDbContext<CuentaDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("CuentaDatabase")));
 
-            // Configuración de filtro de Excepciones a Controladores Globales Centralizado
+            // Configuración del filtro de Excepciones Global
             services.AddControllers(options =>
             {
                 options.Filters.Add<ValidationFilter>();
                 options.Filters.Add<GlobalExceptionFilter>();
             });
 
-            // Registrar ClienteCreatedConsumer
-            services.AddSingleton<ClienteCreatedConsumer>();
+            // Configuración de RabbitMQ como Singleton
+            services.AddSingleton<IConnection>(provider =>
+            {
+                var factory = new ConnectionFactory
+                {
+                    HostName = configuration["RabbitMQ:Host"],
+                    Port = int.Parse(configuration["RabbitMQ:Port"]),
+                    UserName = configuration["RabbitMQ:UserName"],
+                    Password = configuration["RabbitMQ:Password"]
+                };
+                return factory.CreateConnection();
+            });
 
+            // Registrar ClienteCreatedConsumer como HostedService
+            //services.AddHostedService<ClienteCreatedConsumer>();
 
             // Inyectar Servicios y Repositorios
             services.AddScoped<ICuentaService, CuentService>();

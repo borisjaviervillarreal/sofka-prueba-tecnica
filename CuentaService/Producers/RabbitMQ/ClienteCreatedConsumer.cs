@@ -1,103 +1,72 @@
-﻿using RabbitMQ.Client.Events;
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using RabbitMQ.Client.Exceptions;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
-using CuentaService.DTOs;
-using System.Collections.Concurrent;
-using RabbitMQ.Client.Exceptions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
+using CuentaService.Domain.Events;
 
 namespace CuentaService.Producers.RabbitMQ
 {
-    public class ClienteCreatedConsumer
+    public class ClienteCreatedConsumer : BackgroundService
     {
-        private readonly IConnection _connection;
         private readonly IModel _channel;
+        private readonly ILogger<ClienteCreatedConsumer> _logger;
 
-        // Almacenamiento en memoria para los datos del cliente
-        public static ConcurrentDictionary<string, ClienteInfoDto> ClientesInfo = new ConcurrentDictionary<string, ClienteInfoDto>();
+        public static ConcurrentDictionary<string, ClienteCreatedEvent> ClientesInfo = new ConcurrentDictionary<string, ClienteCreatedEvent>();
 
-        public ClienteCreatedConsumer(IConfiguration configuration)
+        public ClienteCreatedConsumer(IConnection connection, ILogger<ClienteCreatedConsumer> logger)
         {
-            var factory = new ConnectionFactory()
-            {
-                HostName = configuration["RabbitMQ:Host"],
-                Port = int.Parse(configuration["RabbitMQ:Port"]),
-                UserName = configuration["RabbitMQ:UserName"],
-                Password = configuration["RabbitMQ:Password"]
-            };
+            _logger = logger;
+            _channel = connection.CreateModel();
 
-            int retryCount = 0;
-            bool connected = false;
-            while (!connected && retryCount < 10)
-            {
-                try
-                {
-                    _connection = factory.CreateConnection();
-                    _channel = _connection.CreateModel();
-
-                    // Declarar el exchange
-                    _channel.ExchangeDeclare(exchange: "cliente_exchange",
-                                             type: "direct",
-                                             durable: true,
-                                             autoDelete: false,
-                                             arguments: null);
-
-                    // Declarar la cola
-                    _channel.QueueDeclare(queue: "cliente_queue",
-                                         durable: true,
-                                         exclusive: false,
-                                         autoDelete: false,
-                                         arguments: null);
-
-                    // Vincular la cola al exchange
-                    _channel.QueueBind(queue: "cliente_queue",
-                                       exchange: "cliente_exchange",
-                                       routingKey: "cliente_routing_key");
-
-                    connected = true; // Conexión exitosa
-                }
-                catch (Exception ex)
-                {
-                    retryCount++;
-                    Console.WriteLine($"Intentando reconectar a RabbitMQ... ({retryCount})");
-                    Thread.Sleep(5000);
-                }
-            }
-
-            if (!connected)
-            {
-                throw new Exception("No se pudo conectar a RabbitMQ después de varios intentos.");
-            }
+            // Configuración del exchange y cola
+            _channel.ExchangeDeclare(exchange: "cliente_exchange", type: "direct", durable: true, autoDelete: false);
+            _channel.QueueDeclare(queue: "cliente_queue", durable: true, exclusive: false, autoDelete: false);
+            _channel.QueueBind(queue: "cliente_queue", exchange: "cliente_exchange", routingKey: "cliente_routing_key");
         }
 
-        public void StartConsuming()
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var consumer = new EventingBasicConsumer(_channel);
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                var clienteInfo = JsonSerializer.Deserialize<ClienteInfoDto>(message);
 
-                // Almacenar la información del cliente en el diccionario
-                if (clienteInfo != null)
+                try
                 {
-                    ClientesInfo[clienteInfo.ClienteId] = clienteInfo;
-                    Console.WriteLine($"Cliente recibido: {clienteInfo.Nombre} ({clienteInfo.ClienteId})");
+                    var clienteEvent = JsonSerializer.Deserialize<ClienteCreatedEvent>(message);
 
-                    // Confirmar la recepción del mensaje
-                    _channel.BasicAck(ea.DeliveryTag, multiple: false);
+                    if (clienteEvent != null)
+                    {
+                        ClientesInfo[clienteEvent.ClienteId] = clienteEvent;
+                        _logger.LogInformation($"Cliente recibido: {clienteEvent.Nombre} ({clienteEvent.ClienteId})");
+
+                        _channel.BasicAck(ea.DeliveryTag, multiple: false);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("El mensaje recibido no es válido.");
+                        _channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: false);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine("El mensaje recibido del cliente no es válido.");
+                    _logger.LogError($"Error al procesar el mensaje: {ex.Message}");
+                    _channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: false);
                 }
             };
 
-            _channel.BasicConsume(queue: "cliente_queue",
-                                 autoAck: false,
-                                 consumer: consumer);
+            _channel.BasicConsume(queue: "cliente_queue", autoAck: false, consumer: consumer);
+
+            return Task.CompletedTask;
         }
     }
-
 }
+

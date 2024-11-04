@@ -17,11 +17,10 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Configurar el consumidor de RabbitMQ solo si no estamos en migración
+// Registrar el consumidor como HostedService solo si no estamos en migración
 if (!args.Contains("migrate"))
 {
-    var clienteConsumer = app.Services.GetRequiredService<ClienteCreatedConsumer>();
-    clienteConsumer.StartConsuming();
+    builder.Services.AddHostedService<ClienteCreatedConsumer>();
 }
 
 // Configure the HTTP request pipeline.

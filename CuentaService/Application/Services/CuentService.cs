@@ -31,7 +31,7 @@ namespace CuentaService.Application.Services
             var cuenta = await _cuentaRepository.GetCuentaByIdAsync(id);
             if (cuenta == null)
             {
-                throw new CuentaNotFoundException(id); // Excepción personalizada para cuenta no encontrada
+                throw new CuentaNotFoundException(id);
             }
 
             return _mapper.Map<CuentaDto>(cuenta);
@@ -47,7 +47,6 @@ namespace CuentaService.Application.Services
             return _mapper.Map<CuentaDto>(cuenta);
         }
 
-
         public async Task UpdateCuentaAsync(int id, CuentaUpdateDto cuentaUpdateDto)
         {
             if (cuentaUpdateDto == null) throw new ArgumentNullException(nameof(cuentaUpdateDto), "El objeto cuenta no puede ser nulo.");
@@ -55,7 +54,7 @@ namespace CuentaService.Application.Services
             var cuentaExistente = await _cuentaRepository.GetCuentaByIdAsync(id);
             if (cuentaExistente == null)
             {
-                throw new CuentaNotFoundException(id); // Excepción personalizada para cuenta no encontrada
+                throw new CuentaNotFoundException(id);
             }
 
             _mapper.Map(cuentaUpdateDto, cuentaExistente);
@@ -67,7 +66,7 @@ namespace CuentaService.Application.Services
             var cuenta = await _cuentaRepository.GetCuentaByIdAsync(id);
             if (cuenta == null)
             {
-                throw new CuentaNotFoundException(id); // Excepción personalizada para cuenta no encontrada
+                throw new CuentaNotFoundException(id);
             }
 
             await _cuentaRepository.DeleteCuentaAsync(id);
@@ -84,12 +83,12 @@ namespace CuentaService.Application.Services
             var cuenta = await _cuentaRepository.GetCuentaByIdAsync(cuentaId);
             if (cuenta == null)
             {
-                throw new CuentaNotFoundException(cuentaId); // Excepción personalizada para cuenta no encontrada
+                throw new CuentaNotFoundException(cuentaId);
             }
 
             if (movimientoDto.TipoMovimiento == "Retiro" && cuenta.SaldoInicial < movimientoDto.Valor)
             {
-                throw new SaldoInsuficienteException(cuenta.SaldoInicial, movimientoDto.Valor); // Excepción personalizada para saldo insuficiente
+                throw new SaldoInsuficienteException(cuenta.SaldoInicial, movimientoDto.Valor);
             }
 
             cuenta.SaldoInicial += movimientoDto.TipoMovimiento == "Retiro" ? -movimientoDto.Valor : movimientoDto.Valor;
@@ -148,7 +147,5 @@ namespace CuentaService.Application.Services
 
             return estadoCuentaList;
         }
-
     }
 }
-

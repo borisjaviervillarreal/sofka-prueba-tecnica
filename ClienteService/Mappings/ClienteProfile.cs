@@ -13,6 +13,7 @@ namespace ClienteService.Mappings
             CreateMap<ClienteUpdateDto, Cliente>();
             CreateMap<Cliente, ClienteInfoDto>(); 
             CreateMap<ClienteInfoDto, Cliente>();
+            CreateMap<Cliente, ClienteCreatedDto>();
             CreateMap<Cliente, ClienteDto>().ReverseMap();
         }
     }

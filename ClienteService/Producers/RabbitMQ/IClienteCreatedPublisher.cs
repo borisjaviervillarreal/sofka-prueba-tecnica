@@ -1,9 +1,11 @@
-﻿using ClienteService.DTOs;
+﻿using ClienteService.Domain.Events;
+using ClienteService.DTOs;
 
 namespace ClienteService.Producers.RabbitMQ
 {
     public interface IClienteCreatedPublisher
     {
-        void PublishCliente(ClienteInfoDto clienteInfo);
+        void PublishClienteCreated(ClienteCreatedEvent clienteCreatedEvent);
+        void PublishClienteUpdated(ClienteUpdatedEvent clienteUpdatedEvent);
     }
 }
