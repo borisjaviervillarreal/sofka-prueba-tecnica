@@ -28,15 +28,14 @@ namespace CuentaService.Controllers
         public async Task<ActionResult<CuentaDto>> GetCuentaById(int id)
         {
             var cuenta = await _cuentaService.GetCuentaByIdAsync(id);
-            return Ok(cuenta);
+            return cuenta == null ? NotFound() : Ok(cuenta);
         }
 
         [HttpPost]
         public async Task<ActionResult> AddCuenta([FromBody] CuentaCreateDto cuentaDto)
         {
-            var cuentaCreada = await _cuentaService.AddCuentaAsync(cuentaDto);
-
-            return CreatedAtAction(nameof(GetCuentaById), new { id = cuentaCreada.Id }, cuentaCreada);
+            var cuenta = await _cuentaService.AddCuentaAsync(cuentaDto);
+            return CreatedAtAction(nameof(GetCuentaById), new { id = cuenta.Id }, cuenta);
         }
 
 

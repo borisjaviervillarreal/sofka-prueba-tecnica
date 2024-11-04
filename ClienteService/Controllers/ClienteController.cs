@@ -30,7 +30,7 @@ namespace ClienteService.Controllers
         public async Task<ActionResult<ClienteDto>> GetClienteById(string clienteId)
         {
             var cliente = await _clienteService.GetClienteByIdAsync(clienteId);
-            return Ok(cliente);
+            return cliente == null ? NotFound() : Ok(cliente);
         }
 
         [HttpPost]
@@ -53,6 +53,5 @@ namespace ClienteService.Controllers
             await _clienteService.DeleteClienteAsync(clienteId);
             return NoContent();
         }
-
     }
 }
