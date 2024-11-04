@@ -12,83 +12,42 @@ namespace ClienteService.Infrastructure.Repositories
 
         public ClienteRepository(ClienteDbContext context)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task<IEnumerable<Cliente>> GetAllClientesAsync()
         {
-            try
-            {
-                return await _context.Clientes.ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new AppException("Error al obtener la lista de clientes desde la base de datos.", 500);
-            }
+            return await _context.Clientes.ToListAsync();
         }
 
         public async Task<Cliente> GetClienteByIdAsync(string clienteId)
         {
-            try
-            {
-                return await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
-            }
-            catch (Exception ex)
-            {
-                throw new AppException("Error al obtener el cliente desde la base de datos.", 500);
-            }
+            return await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
         }
-
 
         public async Task AddClienteAsync(Cliente cliente)
         {
-            try
-            {
-                await _context.Clientes.AddAsync(cliente);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new AppException("Error al agregar el cliente a la base de datos.", 500);
-            }
+            await _context.Clientes.AddAsync(cliente);
+            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateClienteAsync(Cliente cliente)
         {
-            try
-            {
-                _context.Clientes.Update(cliente);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new AppException("Error al actualizar el cliente a la base de datos.", 500);
-            }
-
+            _context.Clientes.Update(cliente);
+            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteClienteAsync(string clienteId)
         {
-            try
+            var cliente = await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
+            if (cliente == null)
             {
-                var cliente = await _context.Clientes.SingleOrDefaultAsync(c => c.ClienteId == clienteId);
-                if (cliente == null)
-                {
-                    throw new ClienteNotFoundException(clienteId);
-                }
+                throw new ClienteNotFoundException(clienteId); // Excepción personalizada para cliente no encontrado
+            }
 
-                cliente.Estado = "Inactivo"; // Eliminado lógico cambiando el estado
-                _context.Clientes.Update(cliente);
-                await _context.SaveChangesAsync();
-            }
-            catch (ClienteNotFoundException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new AppException("Error al eliminar el cliente de la base de datos.", 500);
-            }
+            cliente.Estado = "Inactivo"; // Eliminado lógico cambiando el estado
+            _context.Clientes.Update(cliente);
+            await _context.SaveChangesAsync();
         }
 
     }

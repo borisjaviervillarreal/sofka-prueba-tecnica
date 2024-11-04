@@ -7,10 +7,12 @@ namespace ClienteService.Application.Middleware
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-        public ExceptionHandlingMiddleware(RequestDelegate next)
+        public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
         {
             _next = next;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -21,11 +23,14 @@ namespace ClienteService.Application.Middleware
             }
             catch (AppException ex)
             {
+                _logger.LogError(ex, "Un error de aplicación ha ocurrido: {Message}", ex.Message);
                 await HandleExceptionAsync(context, ex.Message, ex.StatusCode);
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, "Ha ocurrido un error inesperado. Intente nuevamente más tarde.", (int)HttpStatusCode.InternalServerError);
+                _logger.LogError(ex, "Un error inesperado ha ocurrido.");
+                await HandleExceptionAsync(context, "Ha ocurrido un error inesperado. Intente nuevamente más tarde.",
+                (int)HttpStatusCode.InternalServerError);
             }
         }
 
@@ -38,4 +43,5 @@ namespace ClienteService.Application.Middleware
             return context.Response.WriteAsync(response);
         }
     }
+
 }

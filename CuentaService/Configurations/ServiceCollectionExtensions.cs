@@ -1,4 +1,5 @@
-﻿using CuentaService.Application.Services;
+﻿using CuentaService.Application.Exceptions;
+using CuentaService.Application.Services;
 using CuentaService.Domain.Interfaces;
 using CuentaService.Infrastructure.Data;
 using CuentaService.Infrastructure.Repositories;
@@ -14,6 +15,12 @@ namespace CuentaService.Configurations
             // Configuración del DbContext usando la cadena de conexión proporcionada en la configuración
             services.AddDbContext<CuentaDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("CuentaDatabase")));
+
+            // Configuración de filtro de Excepciones a Controladores Globales Centralizado
+            services.AddControllers(options =>
+            {
+                options.Filters.Add<GlobalExceptionFilter>();
+            });
 
             // Registrar ClienteCreatedConsumer
             services.AddSingleton<ClienteCreatedConsumer>();

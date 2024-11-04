@@ -1,4 +1,5 @@
-﻿using ClienteService.Application.Services;
+﻿using ClienteService.Application.Exceptions;
+using ClienteService.Application.Services;
 using ClienteService.Domain.Interfaces;
 using ClienteService.Infrastructure.Data;
 using ClienteService.Infrastructure.Repositories;
@@ -16,6 +17,12 @@ namespace ClienteService.Configurations
             // Configuración del DbContext
             services.AddDbContext<ClienteDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("ClienteDatabase")));
+
+            // Configuración de filtro de Excepciones a Controladores Globales Centralizado
+            services.AddControllers(options =>
+            {
+                options.Filters.Add<GlobalExceptionFilter>();
+            });
 
             services.AddSingleton<IClienteCreatedPublisher, ClienteCreatedPublisher>();
 
