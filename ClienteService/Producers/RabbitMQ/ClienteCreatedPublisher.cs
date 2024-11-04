@@ -22,7 +22,23 @@ namespace ClienteService.Producers.RabbitMQ
                 Password = configuration["RabbitMQ:Password"]
             };
 
-            // Definir la política de reintento para la conexión
+            // Definir Circuit Breaker y la política de reintento para mayor resiliencia
+            var circuitBreakerPolicy = Policy
+                .Handle<BrokerUnreachableException>()
+                .CircuitBreaker(2, TimeSpan.FromSeconds(30),
+                    onBreak: (exception, timespan) =>
+                    {
+                        Console.WriteLine("Circuito abierto: el servicio no está disponible.");
+                    },
+                    onReset: () =>
+                    {
+                        Console.WriteLine("Circuito cerrado: el servicio está disponible nuevamente.");
+                    },
+                    onHalfOpen: () =>
+                    {
+                        Console.WriteLine("Circuito en semiabierto: probando el servicio.");
+                    });
+
             var retryPolicy = Policy
                 .Handle<BrokerUnreachableException>()
                 .WaitAndRetry(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
@@ -31,15 +47,18 @@ namespace ClienteService.Producers.RabbitMQ
                         Console.WriteLine($"Intento {retryCount} fallido de conexión. Reintentando en {timeSpan.Seconds} segundos.");
                     });
 
-            // Ejecutar la conexión con la política de reintento
-            retryPolicy.Execute(() =>
+            // Ejcutar la conexión con el Circuit Breaker y la política de reintento
+            circuitBreakerPolicy.Execute(() =>
             {
-                _connection = factory.CreateConnection();
-                _channel = _connection.CreateModel();
+                retryPolicy.Execute(() =>
+                {
+                    _connection = factory.CreateConnection();
+                    _channel = _connection.CreateModel();
 
-                _channel.ExchangeDeclare(exchange: "cliente_exchange", type: "direct", durable: true, autoDelete: false, arguments: null);
-                _channel.QueueDeclare(queue: "cliente_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
-                _channel.QueueBind(queue: "cliente_queue", exchange: "cliente_exchange", routingKey: "cliente_routing_key");
+                    _channel.ExchangeDeclare(exchange: "cliente_exchange", type: "direct", durable: true, autoDelete: false, arguments: null);
+                    _channel.QueueDeclare(queue: "cliente_queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+                    _channel.QueueBind(queue: "cliente_queue", exchange: "cliente_exchange", routingKey: "cliente_routing_key");
+                });
             });
         }
 
